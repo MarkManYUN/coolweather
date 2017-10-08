@@ -1,6 +1,7 @@
 package com.coolweather.android;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -95,6 +96,12 @@ public class ChooseAreaFragment extends Fragment {
                 } else if (currentLevel == LEVEL_CITY) {
                     selectedCity = cityList.get(i);
                     queryCounties();
+                } else if (currentLevel == LEVEL_COUNTY) {
+                    String weatherId = countyList.get(i).getWeatherId();
+                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                    intent.putExtra("weather_id", weatherId);
+                    startActivity(intent);
+                    getActivity().finish();
                 }
             }
         });
@@ -102,7 +109,7 @@ public class ChooseAreaFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 if (currentLevel == LEVEL_COUNTY) {
-                    address=address.substring(0,address.indexOf("·"));
+                    address = address.substring(0, address.indexOf("·"));
                     queryCities();
 
                 } else if (currentLevel == LEVEL_CITY) {
@@ -117,7 +124,7 @@ public class ChooseAreaFragment extends Fragment {
      * 查询全国所有的省，优先从数据库查询，如果没有查询到再去服务器上查询
      */
     private void queryProvince() {
-        address="中国";
+        address = "中国";
         titleText.setText(address);
         backButton.setVisibility(View.GONE);
         provincesList = DataSupport.findAll(Province.class);
@@ -131,17 +138,18 @@ public class ChooseAreaFragment extends Fragment {
             currentLevel = LEVEL_PROVINCE;
         } else {
             String addressurl = "http://guolin.tech/api/china";
-            address = address.substring(0,address.lastIndexOf("·"));
+            if (!"中国".equals(address))
+                address = address.substring(0, address.lastIndexOf("·"));
             queryFormServer(addressurl, "province");
         }
     }
 
-        /**
-         * 查询选中省内所有的市，优先从数据库中查询，如果没有查询到再去服务器上去查询；
-         */
+    /**
+     * 查询选中省内所有的市，优先从数据库中查询，如果没有查询到再去服务器上去查询；
+     */
 
     private void queryCities() {
-        address+="·"+selectedProvince.getProvinceName();
+        address += "·" + selectedProvince.getProvinceName();
         titleText.setText(address);
         backButton.setVisibility(View.VISIBLE);
         cityList = DataSupport.where("provinceid=?", String.valueOf(selectedProvince.getId())).find(City.class);
@@ -157,7 +165,7 @@ public class ChooseAreaFragment extends Fragment {
         } else {
             int ProvinceCode = selectedProvince.getProvinceCode();
             String addressUrl = "http://guolin.tech/api/china/" + ProvinceCode;
-            address = address.substring(0,address.lastIndexOf("·"));
+            address = address.substring(0, address.lastIndexOf("·"));
             queryFormServer(addressUrl, "city");
         }
     }
@@ -166,7 +174,7 @@ public class ChooseAreaFragment extends Fragment {
      * 查询选中市内的所有县，优先从数据库查询，如果没有查询到再去服务器上查询
      */
     private void queryCounties() {
-        address+="·"+selectedCity.getCityName();
+        address += "·" + selectedCity.getCityName();
         titleText.setText(address);
         backButton.setVisibility(View.VISIBLE);
         countyList = DataSupport.where("cityid=?", String.valueOf(selectedCity.getId())).find(County.class);
@@ -182,11 +190,12 @@ public class ChooseAreaFragment extends Fragment {
             int provinceCode = selectedProvince.getProvinceCode();
             int cityCode = selectedCity.getCityCode();
             String addressUrl = "http://guolin.tech/api/china/" + provinceCode + "/" + cityCode;
-            address = address.substring(0,address.lastIndexOf("·"));
+            address = address.substring(0, address.lastIndexOf("·"));
             queryFormServer(addressUrl, "county");
         }
 
     }
+
     /**
      * 根据传入的地址和类型从服务器上查询省市县数据
      */
@@ -234,7 +243,9 @@ public class ChooseAreaFragment extends Fragment {
 
             }
         });
-    } /**
+    }
+
+    /**
      * 显示进度对话框
      */
     private void showProgressDialog() {
